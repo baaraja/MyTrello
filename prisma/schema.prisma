@@ -1,0 +1,99 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int              @id @default(autoincrement())
+  username    String           @db.VarChar(65)
+  email       String           @db.VarChar(255) @unique
+  password    String           @db.VarChar(255)
+  posts       Post[]           @relation("user_posts")
+  comments    Comment[]        @relation("user_comments")
+  workspaces  WorkspaceUsers[] @relation("user_workspaces")
+  boards      BoardUsers[]     @relation("user_boards")
+  lists       List[]           @relation("user_lists")
+  cards       Card[]           @relation("user_cards")
+}
+
+model Post {
+  postId      Int              @id @default(autoincrement())
+  title       String           @db.VarChar(255)
+  body        String
+  userId      Int
+  user        User             @relation("user_posts", fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  comments    Comment[]        @relation("post_comments")
+}
+
+model Comment {
+  id          Int              @id @default(autoincrement())
+  content     String           @db.VarChar(255)
+  postId      Int
+  userId      Int
+  post        Post             @relation("post_comments", fields: [postId], references: [postId], onUpdate: Cascade, onDelete: Cascade)
+  user        User             @relation("user_comments", fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+}
+
+model Workspace {
+  workspaceId Int              @id @default(autoincrement())
+  name        String           @db.VarChar(255)
+  description String?
+  users       WorkspaceUsers[] @relation("workspace_users")
+  boards      Board[]          @relation("workspace_boards")
+}
+
+model WorkspaceUsers {
+  userId      Int
+  workspaceId Int
+  user        User             @relation("user_workspaces", fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  workspace   Workspace        @relation("workspace_users", fields: [workspaceId], references: [workspaceId], onUpdate: Cascade, onDelete: Cascade)
+  @@id([userId, workspaceId])
+}
+
+model Board {
+  boardId     Int              @id @default(autoincrement())
+  workspaceId Int
+  name        String           @db.VarChar(255)
+  description String?
+  workspace   Workspace        @relation("workspace_boards", fields: [workspaceId], references: [workspaceId], onUpdate: Cascade, onDelete: Cascade)
+  users       BoardUsers[]     @relation("board_users")
+  lists       List[]           @relation("board_lists")
+}
+
+model BoardUsers {
+  userId      Int
+  boardId     Int
+  user        User             @relation("user_boards", fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  board       Board            @relation("board_users", fields: [boardId], references: [boardId], onUpdate: Cascade, onDelete: Cascade)
+  @@id([userId, boardId])
+}
+
+model List {
+  listId      Int              @id @default(autoincrement())
+  name        String           @db.VarChar(255)
+  userId      Int
+  boardId     Int
+  user        User             @relation("user_lists", fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  board       Board            @relation("board_lists", fields: [boardId], references: [boardId], onUpdate: Cascade, onDelete: Cascade)
+  cards       Card[]           @relation("list_cards")
+}
+
+model Card {
+  cardId      Int              @id @default(autoincrement())
+  title       String           @db.VarChar(255)
+  description String?
+  userId      Int
+  listId      Int
+  user        User             @relation("user_cards", fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  list        List             @relation("list_cards", fields: [listId], references: [listId], onUpdate: Cascade, onDelete: Cascade)
+}
