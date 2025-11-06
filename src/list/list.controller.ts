@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Param, ParseIntPipe, Post, Put, Req, UseGuards } from '@nestjs/common';
+import { Get } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ListService } from 'src/list/list.service';
 import { CreateListDto } from 'src/dto/createListDto';
@@ -13,6 +14,12 @@ export class ListController {
     create(@Body()createListDto : CreateListDto , @Req() request : Request) {
         const userId = request.user['userId'];
         return this.listService.create(createListDto , userId);
+    }
+    @UseGuards(AuthGuard('jwt'))
+    @Get('board/:id')
+    getByBoard(@Param('id', ParseIntPipe) boardId: number, @Req() request: Request) {
+        const userId = request.user['userId'];
+        return this.listService.getLists(boardId, userId);
     }
     @UseGuards(AuthGuard('jwt'))
     @Delete('delete/:id')

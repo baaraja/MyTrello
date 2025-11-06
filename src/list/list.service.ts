@@ -72,4 +72,16 @@ export class ListService {
             },
         };
     }
+
+    async getLists(boardId: number, userId: number) {
+        const board = await this.prismaService.board.findUnique({ where: { boardId } });
+        if (!board) throw new NotFoundException('Board not found');
+        const userBoard = await this.prismaService.boardUsers.findFirst({ where: { boardId, userId } });
+        if (!userBoard) throw new ForbiddenException('Forbidden');
+        const lists = await this.prismaService.list.findMany({
+            where: { boardId },
+            include: { cards: { select: { cardId: true, title: true, description: true, userId: true } } },
+        });
+        return lists.map(l => ({ listId: l.listId, name: l.name, cards: l.cards }));
+    }
 }

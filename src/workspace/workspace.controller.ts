@@ -22,10 +22,28 @@ export class WorkspaceController {
         return this.workspaceService.create(createWorkspaceDto, userId);
     }
     @UseGuards(AuthGuard('jwt'))
+    @Put('removeUser/:id')
+    remove(@Param('id', ParseIntPipe) workspaceId: number, @Body() addUserDto: AddUserDto, @Req() request: Request) {
+        const userId = request.user['userId'];
+        return this.workspaceService.removeUser(workspaceId, userId, addUserDto);
+    }
+    @UseGuards(AuthGuard('jwt'))
+    @Get('members/:id')
+    getMembers(@Param('id', ParseIntPipe) workspaceId: number, @Req() request: Request) {
+        const userId = request.user['userId'];
+        return this.workspaceService.getMembers(workspaceId, userId);
+    }
+    @UseGuards(AuthGuard('jwt'))
     @Delete('delete/:id')
     delete(@Param('id', ParseIntPipe) workspaceId: number, createWorkspaceDto: CreateWorkspaceDto, @Req() request : Request) {
         const userId = request.user['userId'];
         return this.workspaceService.delete(workspaceId, userId);
+    }
+    @UseGuards(AuthGuard('jwt'))
+    @Get('members/:id')
+    members(@Param('id', ParseIntPipe) workspaceId: number, @Req() request: Request) {
+        const userId = request.user['userId'];
+        return this.workspaceService.getMembers(workspaceId, userId);
     }
     @UseGuards(AuthGuard('jwt'))
     @Put('update/:id')

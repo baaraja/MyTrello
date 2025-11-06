@@ -65,10 +65,12 @@ export class CardService {
             where: { boardId: card.list.boardId, userId },
         });
         if (!userBoard) throw new ForbiddenException('Forbidden');
-        await this.prismaService.card.update({
-            where: { cardId },
-            data: updateCardDto,
-        });
+        const data:any = {};
+        if (updateCardDto.title !== undefined) data.title = updateCardDto.title;
+        if (updateCardDto.description !== undefined) data.description = updateCardDto.description;
+        if ((updateCardDto as any).listId !== undefined) data.list = { connect: { listId: (updateCardDto as any).listId } };
+        if ((updateCardDto as any).userId !== undefined) data.user = { connect: { id: (updateCardDto as any).userId } };
+        await this.prismaService.card.update({ where: { cardId }, data });
         return {
             data: {
                 cardId: card.cardId,

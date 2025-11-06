@@ -39,4 +39,22 @@ export class BoardController {
         const userId = request.user['userId'];
         return this.boardService.addUser(boardId, userId, addUserDto);
     }
+    @UseGuards(AuthGuard('jwt'))
+    @Put('removeUser/:id')
+    remove(@Param('id', ParseIntPipe) boardId: number, @Body() addUserDto: AddUserDto, @Req() request: Request) {
+        const userId = request.user['userId'];
+        return this.boardService.removeUser(boardId, userId, addUserDto);
+    }
+    @UseGuards(AuthGuard('jwt'))
+    @Get('members/:id')
+    members(@Param('id', ParseIntPipe) boardId: number, @Req() request: Request) {
+        const userId = request.user['userId'];
+        return this.boardService.getMembers(boardId, userId);
+    }
+    @UseGuards(AuthGuard('jwt'))
+    @Get('members/:id')
+    getMembers(@Param('id', ParseIntPipe) boardId: number, @Req() request: Request) {
+        const userId = request.user['userId'];
+        return this.boardService.getMembers(boardId, userId);
+    }
 }

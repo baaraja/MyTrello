@@ -137,4 +137,29 @@ export class BoardService {
             data: 'User added to workspace and all its boards',
         };
     }
+
+    async removeUser(boardId: number, userId: number, addUserDto: AddUserDto) {
+        const board = await this.prismaService.board.findUnique({ where: { boardId } });
+        if (!board) throw new NotFoundException('Board not found');
+        const requester = await this.prismaService.boardUsers.findFirst({ where: { boardId, userId } });
+        if (!requester) throw new ForbiddenException('Forbidden');
+        const target = await this.prismaService.user.findUnique({ where: { id: addUserDto.userId } });
+        if (!target) throw new NotFoundException('User not found');
+        const targetRelation = await this.prismaService.boardUsers.findFirst({ where: { boardId, userId: addUserDto.userId } });
+        if (!targetRelation) throw new NotFoundException('User not a member of the board');
+        await this.prismaService.boardUsers.deleteMany({ where: { boardId, userId: addUserDto.userId } });
+        return { data: 'User removed from board' };
+    }
+
+    async getMembers(boardId: number, userId: number) {
+        const board = await this.prismaService.board.findUnique({ where: { boardId } });
+        if (!board) throw new NotFoundException('Board not found');
+        const userBoard = await this.prismaService.boardUsers.findFirst({ where: { boardId, userId } });
+        if (!userBoard) throw new ForbiddenException('Forbidden');
+        const members = await this.prismaService.boardUsers.findMany({
+            where: { boardId },
+            include: { user: { select: { id: true, username: true, email: true } } },
+        });
+        return members.map(m => ({ id: m.user.id, username: m.user.username, email: m.user.email }));
+    }
 }

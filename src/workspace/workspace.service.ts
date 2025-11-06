@@ -117,4 +117,32 @@ export class WorkspaceService {
         });    
         return { data: 'User added to workspace' };
     }
+    async removeUser(workspaceId: number, userId: number, addUserDto: AddUserDto) {
+        const workspace = await this.prismaService.workspace.findUnique({ where: { workspaceId } });
+        if (!workspace) throw new NotFoundException('Workspace not found');
+        const requester = await this.prismaService.workspaceUsers.findFirst({ where: { workspaceId, userId } });
+        if (!requester) throw new ForbiddenException('Forbidden');
+        const target = await this.prismaService.user.findUnique({ where: { id: addUserDto.userId } });
+        if (!target) throw new NotFoundException('User not found');
+        const targetRelation = await this.prismaService.workspaceUsers.findFirst({ where: { workspaceId, userId: addUserDto.userId } });
+        if (!targetRelation) throw new NotFoundException('User not a member of the workspace');
+        await this.prismaService.workspaceUsers.deleteMany({ where: { workspaceId, userId: addUserDto.userId } });
+        const boards = await this.prismaService.board.findMany({ where: { workspaceId } });
+        const boardIds = boards.map(b => b.boardId);
+        if (boardIds.length) {
+            await this.prismaService.boardUsers.deleteMany({ where: { boardId: { in: boardIds }, userId: addUserDto.userId } });
+        }
+        return { data: 'User removed from workspace and its boards' };
+    }
+    async getMembers(workspaceId: number, userId: number) {
+        const workspace = await this.prismaService.workspace.findUnique({ where: { workspaceId } });
+        if (!workspace) throw new NotFoundException('Workspace not found');
+        const member = await this.prismaService.workspaceUsers.findFirst({ where: { workspaceId, userId } });
+        if (!member) throw new ForbiddenException('Forbidden');
+        const members = await this.prismaService.workspaceUsers.findMany({
+            where: { workspaceId },
+            include: { user: { select: { id: true, username: true, email: true } } },
+        });
+        return members.map(m => ({ id: m.user.id, username: m.user.username, email: m.user.email }));
+    }
 }

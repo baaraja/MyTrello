@@ -6,6 +6,15 @@ import authService from './auth/auth';
 const Dash = ({ user }) => {
     const [workspaces, setWorkspaces] = useState([]);
     const [boards, setBoards] = useState([]);
+    const [inviting, setInviting] = useState(null);
+    const [inviteUserId, setInviteUserId] = useState('');
+    const [invitingBoard, setInvitingBoard] = useState(null);
+    const [inviteBoardUserId, setInviteBoardUserId] = useState('');
+    const [workspaceMembers, setWorkspaceMembers] = useState({});
+    const [boardMembers, setBoardMembers] = useState({});
+    const [hovered, setHovered] = useState(null);
+    const [hoveredWorkspace, setHoveredWorkspace] = useState(null);
+    const [hoveredBoard, setHoveredBoard] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -58,9 +67,72 @@ const Dash = ({ user }) => {
                 <ListGroup>
                     {workspaces.map((workspace, index) => {
                         return (
-                            <ListGroup.Item key={index} onClick={() => navigate(`/w/${workspace.name}`)}>
-                                <strong>{capitalize(workspace.name)}</strong>
-                            </ListGroup.Item>
+                            <React.Fragment key={workspace.workspaceId}>
+                                <ListGroup.Item
+                                    className="d-flex justify-content-between align-items-center"
+                                    style={{ background: hoveredWorkspace === workspace.workspaceId ? '#f8d7da' : 'transparent' }}
+                                    onMouseMove={(e) => {
+                                        const el = document.elementFromPoint(e.clientX, e.clientY);
+                                        if (!el) return;
+                                        const overInteractive = el.closest && (el.closest('button') || el.closest('input') || el.closest('select') || el.closest('strong'));
+                                        if (overInteractive) {
+                                            if (hoveredWorkspace === workspace.workspaceId) setHoveredWorkspace(null);
+                                            return;
+                                        }
+                                        if (hoveredWorkspace !== workspace.workspaceId) setHoveredWorkspace(workspace.workspaceId);
+                                    }}
+                                    onMouseLeave={() => setHoveredWorkspace(null)}
+                                    onClick={async (e) => {
+                                        const el = e.target;
+                                        if (el.closest && (el.closest('button') || el.closest('strong') || el.closest('input') || el.closest('select'))) return;
+                                        await authService.deleteWorkspace(workspace.workspaceId);
+                                        const res = await authService.getWorkspaces();
+                                        setWorkspaces(res);
+                                    }}
+                                >
+                                    <div style={{ cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); navigate(`/w/${workspace.name}`); }}>
+                                        <strong style={{ padding: '6px', borderRadius: 4 }}>{capitalize(workspace.name)}</strong>
+                                    </div>
+                                    <div>
+                                        {inviting===workspace.workspaceId?(
+                                            <span className="d-flex">
+                                                <input type="number" className="form-control form-control-sm me-2" placeholder="userId" value={inviteUserId} onChange={e=>setInviteUserId(e.target.value)} />
+                                                <Button size="sm" variant="success" onClick={async()=>{await authService.addUserToWorkspace(workspace.workspaceId,Number(inviteUserId));setInviting(null);setInviteUserId('');}}>OK</Button>
+                                                <Button size="sm" variant="secondary" className="ms-2" onClick={()=>{setInviting(null);setInviteUserId('');}}>X</Button>
+                                            </span>
+                                        ):(
+                                            <>
+                                            <Button size="sm" variant="outline-primary" onClick={()=>{setInviting(workspace.workspaceId);}}>Invite</Button>
+                                            <Button size="sm" variant="info" className="ms-2" onClick={async()=>{if(workspaceMembers[workspace.workspaceId]){setWorkspaceMembers(prev=>{const copy={...prev};delete copy[workspace.workspaceId];return copy;});}else{const res=await authService.getWorkspaceMembers(workspace.workspaceId);setWorkspaceMembers(prev=>({...prev,[workspace.workspaceId]:res}));}}}>Members</Button>
+                                            </>
+                                        )}
+                                    </div>
+                                </ListGroup.Item>
+                                {workspaceMembers[workspace.workspaceId]&&(
+                                    <ListGroup.Item className="ps-5">
+                                        {workspaceMembers[workspace.workspaceId].map(u=>{
+                                            const isHovered = hovered && hovered.type==='workspace' && hovered.parentId===workspace.workspaceId && hovered.memberId===u.id;
+                                            return (
+                                                <div key={u.id}
+                                                    onMouseMove={(e) => {
+                                                        const el = document.elementFromPoint(e.clientX, e.clientY);
+                                                        if (!el) return;
+                                                        if (el.closest && (el.closest('button') || el.closest('input') || el.closest('select') || el.closest('strong'))) {
+                                                            return;
+                                                        }
+                                                        if (!isHovered) setHovered({type:'workspace',parentId:workspace.workspaceId,memberId:u.id});
+                                                    }}
+                                                    onMouseLeave={()=>{ if (isHovered) setHovered(null); }}
+                                                    onClick={async(e)=>{ const el = e.target; if (el.closest && (el.closest('button') || el.closest('input') || el.closest('select') || el.closest('strong'))) return; await authService.removeUserFromWorkspace(workspace.workspaceId,u.id);const res=await authService.getWorkspaceMembers(workspace.workspaceId);setWorkspaceMembers(prev=>({...prev,[workspace.workspaceId]:res}));}}
+                                                    style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px',borderRadius:4,background:isHovered?'#f8d7da':'transparent',cursor:'pointer'}}>
+                                                    <div>{u.username} ({u.email})</div>
+                                                    <div style={{color:isHovered?'#721c24':'transparent',fontWeight:700}}>Remove</div>
+                                                </div>
+                                            )
+                                        })}
+                                    </ListGroup.Item>
+                                )}
+                            </React.Fragment>
                         );
                     })}
                 </ListGroup>
@@ -83,9 +155,72 @@ const Dash = ({ user }) => {
                 <ListGroup>
                     {boards.map((board, index) => {
                         return (
-                            <ListGroup.Item key={index} onClick={() => navigate(`/b/${board.name}`)}>
-                                <strong>{capitalize(board.name)}</strong>
-                            </ListGroup.Item>
+                            <React.Fragment key={board.boardId}>
+                                <ListGroup.Item
+                                    className="d-flex justify-content-between align-items-center"
+                                    style={{ background: hoveredBoard === board.boardId ? '#f8d7da' : 'transparent' }}
+                                    onMouseMove={(e) => {
+                                        const el = document.elementFromPoint(e.clientX, e.clientY);
+                                        if (!el) return;
+                                        const overInteractive = el.closest && (el.closest('button') || el.closest('input') || el.closest('select') || el.closest('strong'));
+                                        if (overInteractive) {
+                                            if (hoveredBoard === board.boardId) setHoveredBoard(null);
+                                            return;
+                                        }
+                                        if (hoveredBoard !== board.boardId) setHoveredBoard(board.boardId);
+                                    }}
+                                    onMouseLeave={() => setHoveredBoard(null)}
+                                    onClick={async (e) => {
+                                        const el = e.target;
+                                        if (el.closest && (el.closest('button') || el.closest('strong') || el.closest('input') || el.closest('select'))) return;
+                                        await authService.deleteBoard(board.boardId);
+                                        const res = await authService.getBoards();
+                                        setBoards(res);
+                                    }}
+                                >
+                                    <div style={{ cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); navigate(`/b/${board.boardId}`); }}>
+                                        <strong style={{ padding: '6px', borderRadius: 4 }}>{capitalize(board.name)}</strong>
+                                    </div>
+                                    <div>
+                                        {invitingBoard===board.boardId?(
+                                            <span className="d-flex">
+                                                <input type="number" className="form-control form-control-sm me-2" placeholder="userId" value={inviteBoardUserId} onChange={e=>setInviteBoardUserId(e.target.value)} />
+                                                <Button size="sm" variant="success" onClick={async()=>{await authService.addUserToBoard(board.boardId,Number(inviteBoardUserId));setInvitingBoard(null);setInviteBoardUserId('');}}>OK</Button>
+                                                <Button size="sm" variant="secondary" className="ms-2" onClick={()=>{setInvitingBoard(null);setInviteBoardUserId('');}}>X</Button>
+                                            </span>
+                                        ):(
+                                            <>
+                                            <Button size="sm" variant="outline-primary" onClick={()=>{setInvitingBoard(board.boardId);}}>Invite</Button>
+                                            <Button size="sm" variant="info" className="ms-2" onClick={async()=>{if(boardMembers[board.boardId]){setBoardMembers(prev=>{const copy={...prev};delete copy[board.boardId];return copy;});}else{const res=await authService.getBoardMembers(board.boardId);setBoardMembers(prev=>({...prev,[board.boardId]:res}));}}}>Members</Button>
+                                            </>
+                                        )}
+                                    </div>
+                                </ListGroup.Item>
+                                {boardMembers[board.boardId]&&(
+                                    <ListGroup.Item className="ps-5">
+                                        {boardMembers[board.boardId].map(u=>{
+                                            const isHovered = hovered && hovered.type==='board' && hovered.parentId===board.boardId && hovered.memberId===u.id;
+                                            return (
+                                                <div key={u.id}
+                                                    onMouseMove={(e) => {
+                                                        const el = document.elementFromPoint(e.clientX, e.clientY);
+                                                        if (!el) return;
+                                                        if (el.closest && (el.closest('button') || el.closest('input') || el.closest('select') || el.closest('strong'))) {
+                                                            return;
+                                                        }
+                                                        if (!isHovered) setHovered({type:'board',parentId:board.boardId,memberId:u.id});
+                                                    }}
+                                                    onMouseLeave={()=>{ if (isHovered) setHovered(null); }}
+                                                    onClick={async(e)=>{ const el = e.target; if (el.closest && (el.closest('button') || el.closest('input') || el.closest('select') || el.closest('strong'))) return; await authService.removeUserFromBoard(board.boardId,u.id);const res=await authService.getBoardMembers(board.boardId);setBoardMembers(prev=>({...prev,[board.boardId]:res}));}}
+                                                    style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px',borderRadius:4,background:isHovered?'#f8d7da':'transparent',cursor:'pointer'}}>
+                                                    <div>{u.username} ({u.email})</div>
+                                                    <div style={{color:isHovered?'#721c24':'transparent',fontWeight:700}}>Remove</div>
+                                                </div>
+                                            )
+                                        })}
+                                    </ListGroup.Item>
+                                )}
+                            </React.Fragment>
                         );
                     })}
                 </ListGroup>

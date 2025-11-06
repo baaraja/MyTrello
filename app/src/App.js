@@ -7,6 +7,7 @@ import Logout from './components/Logout';
 import Dash from './components/Dash';
 import Workspace from './components/Workspace';
 import Board from './components/Board';
+import BoardView from './components/BoardView';
 
 function App() {
     const [user, setUser] = useState(localStorage.getItem('username'));
@@ -52,6 +53,7 @@ function App() {
                     <Route path="/u/:user/boards" element={<Dash user={user} />} />
                     <Route path="/w/add" element={<Workspace user={user} />} />
                     <Route path="/b/add" element={<Board user={user} />} />
+                    <Route path="/b/:boardId" element={<BoardView user={user} />} />
                     <Route path="*" element={
                         <div className="d-flex justify-content-center align-items-center" style={{ height: '75vh' }}>
                             <strong style={{ fontSize: '8rem' }}>
