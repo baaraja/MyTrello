@@ -135,6 +135,14 @@ const deleteWorkspace = async (workspaceId) => {
     return response.data;
 }
 
+const updateWorkspace = async (workspaceId, data) => {
+    const token = localStorage.getItem('token');
+    const response = await api.put(`/w/update/${workspaceId}`, data, {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+}
+
 const createCard = async (title, description, listId) => {
     const token = localStorage.getItem('token');
     const response = await api.post('/c/create', { title, description, listId }, {
@@ -154,6 +162,14 @@ const deleteCard = async (cardId) => {
 const deleteBoard = async (boardId) => {
     const token = localStorage.getItem('token');
     const response = await api.delete(`/b/delete/${boardId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+}
+
+const updateBoard = async (boardId, data) => {
+    const token = localStorage.getItem('token');
+    const response = await api.put(`/b/update/${boardId}`, data, {
         headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
@@ -188,7 +204,9 @@ const authService = {
     removeUserFromWorkspace,
     removeUserFromBoard,
     deleteWorkspace,
+    updateWorkspace,
     deleteBoard,
+    updateBoard,
 };
 
 export default authService;

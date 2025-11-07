@@ -104,38 +104,19 @@ export class BoardService {
             },
         };
     }
-    async addUser(workspaceId: number, userId: number, addUserDto: AddUserDto) {
-        const workspace = await this.prismaService.workspace.findUnique({
-            where: { workspaceId },
-        });
-        if (!workspace) throw new NotFoundException('Workspace not found');
-        const user = await this.prismaService.user.findUnique({
-            where: { id: addUserDto.userId },
-        });
-        if (!user) throw new NotFoundException('User not found');
-        const userWorkspace = await this.prismaService.workspaceUsers.findFirst({
-            where: { workspaceId, userId: addUserDto.userId },
-        });
-        if (userWorkspace) throw new ForbiddenException('User already a member of the workspace');
-        await this.prismaService.workspaceUsers.create({
-            data: {
-                workspaceId,
-                userId: addUserDto.userId,
-            },
-        });
-        const boards = await this.prismaService.board.findMany({
-            where: { workspaceId },
-        });
-        const boardUsersData = boards.map(board => ({
-            boardId: board.boardId,
-            userId: addUserDto.userId,
-        }));
-        await this.prismaService.boardUsers.createMany({
-            data: boardUsersData,
-        });
-        return {
-            data: 'User added to workspace and all its boards',
-        };
+    // Add a user to a single board (called from BoardController)
+    async addUser(boardId: number, userId: number, addUserDto: AddUserDto) {
+        const board = await this.prismaService.board.findUnique({ where: { boardId } });
+        if (!board) throw new NotFoundException('Board not found');
+        // requester must be a member of the board
+        const requester = await this.prismaService.boardUsers.findFirst({ where: { boardId, userId } });
+        if (!requester) throw new ForbiddenException('Forbidden');
+        const target = await this.prismaService.user.findUnique({ where: { id: addUserDto.userId } });
+        if (!target) throw new NotFoundException('User not found');
+        const existing = await this.prismaService.boardUsers.findFirst({ where: { boardId, userId: addUserDto.userId } });
+        if (existing) throw new ForbiddenException('User already a member of the board');
+        await this.prismaService.boardUsers.create({ data: { boardId, userId: addUserDto.userId } });
+        return { data: 'User added to board' };
     }
 
     async removeUser(boardId: number, userId: number, addUserDto: AddUserDto) {

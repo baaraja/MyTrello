@@ -15,6 +15,10 @@ const Dash = ({ user }) => {
     const [hovered, setHovered] = useState(null);
     const [hoveredWorkspace, setHoveredWorkspace] = useState(null);
     const [hoveredBoard, setHoveredBoard] = useState(null);
+    const [editingWorkspace, setEditingWorkspace] = useState(null);
+    const [editingWorkspaceName, setEditingWorkspaceName] = useState('');
+    const [editingBoard, setEditingBoard] = useState(null);
+    const [editingBoardName, setEditingBoardName] = useState('');
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -90,8 +94,18 @@ const Dash = ({ user }) => {
                                         setWorkspaces(res);
                                     }}
                                 >
-                                    <div style={{ cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); navigate(`/w/${workspace.name}`); }}>
-                                        <strong style={{ padding: '6px', borderRadius: 4 }}>{capitalize(workspace.name)}</strong>
+                                    <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                                        {editingWorkspace === workspace.workspaceId ? (
+                                            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
+                                                <input className="form-control form-control-sm" value={editingWorkspaceName} onChange={(e) => setEditingWorkspaceName(e.target.value)} style={{ width: 180 }} />
+                                                <Button size="sm" variant="success" onClick={async (e) => { e.stopPropagation(); try { await authService.updateWorkspace(workspace.workspaceId, { name: editingWorkspaceName }); const res = await authService.getWorkspaces(); setWorkspaces(res); } catch (err) { console.error(err); } setEditingWorkspace(null); }}>Save</Button>
+                                                <Button size="sm" variant="secondary" className="ms-2" onClick={(e) => { e.stopPropagation(); setEditingWorkspace(null); }}>{'Cancel'}</Button>
+                                            </div>
+                                        ) : (
+                                            <div style={{ display: 'flex', alignItems: 'center' }} onClick={(e) => { e.stopPropagation(); navigate(`/w/${workspace.name}`); }}>
+                                                <strong style={{ padding: '6px', borderRadius: 4 }}>{capitalize(workspace.name)}</strong>
+                                            </div>
+                                        )}
                                     </div>
                                     <div>
                                         {inviting===workspace.workspaceId?(
@@ -103,6 +117,7 @@ const Dash = ({ user }) => {
                                         ):(
                                             <>
                                             <Button size="sm" variant="outline-primary" onClick={()=>{setInviting(workspace.workspaceId);}}>Invite</Button>
+                                            <Button size="sm" variant="light" className="ms-2" onClick={(e)=>{ e.stopPropagation(); setEditingWorkspace(workspace.workspaceId); setEditingWorkspaceName(workspace.name); }}>Edit</Button>
                                             <Button size="sm" variant="info" className="ms-2" onClick={async()=>{if(workspaceMembers[workspace.workspaceId]){setWorkspaceMembers(prev=>{const copy={...prev};delete copy[workspace.workspaceId];return copy;});}else{const res=await authService.getWorkspaceMembers(workspace.workspaceId);setWorkspaceMembers(prev=>({...prev,[workspace.workspaceId]:res}));}}}>Members</Button>
                                             </>
                                         )}
@@ -178,8 +193,18 @@ const Dash = ({ user }) => {
                                         setBoards(res);
                                     }}
                                 >
-                                    <div style={{ cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); navigate(`/b/${board.boardId}`); }}>
-                                        <strong style={{ padding: '6px', borderRadius: 4 }}>{capitalize(board.name)}</strong>
+                                    <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                                        {editingBoard === board.boardId ? (
+                                            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
+                                                <input className="form-control form-control-sm" value={editingBoardName} onChange={(e) => setEditingBoardName(e.target.value)} style={{ width: 180 }} />
+                                                <Button size="sm" variant="success" onClick={async (e) => { e.stopPropagation(); try { await authService.updateBoard(board.boardId, { name: editingBoardName }); const res = await authService.getBoards(); setBoards(res); } catch (err) { console.error(err); } setEditingBoard(null); }}>Save</Button>
+                                                <Button size="sm" variant="secondary" className="ms-2" onClick={(e) => { e.stopPropagation(); setEditingBoard(null); }}>{'Cancel'}</Button>
+                                            </div>
+                                        ) : (
+                                            <div style={{ display: 'flex', alignItems: 'center' }} onClick={(e) => { e.stopPropagation(); navigate(`/b/${board.boardId}`); }}>
+                                                <strong style={{ padding: '6px', borderRadius: 4 }}>{capitalize(board.name)}</strong>
+                                            </div>
+                                        )}
                                     </div>
                                     <div>
                                         {invitingBoard===board.boardId?(
@@ -191,6 +216,7 @@ const Dash = ({ user }) => {
                                         ):(
                                             <>
                                             <Button size="sm" variant="outline-primary" onClick={()=>{setInvitingBoard(board.boardId);}}>Invite</Button>
+                                            <Button size="sm" variant="light" className="ms-2" onClick={(e)=>{ e.stopPropagation(); setEditingBoard(board.boardId); setEditingBoardName(board.name); }}>Edit</Button>
                                             <Button size="sm" variant="info" className="ms-2" onClick={async()=>{if(boardMembers[board.boardId]){setBoardMembers(prev=>{const copy={...prev};delete copy[board.boardId];return copy;});}else{const res=await authService.getBoardMembers(board.boardId);setBoardMembers(prev=>({...prev,[board.boardId]:res}));}}}>Members</Button>
                                             </>
                                         )}

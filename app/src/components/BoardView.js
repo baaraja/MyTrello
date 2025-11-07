@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button, Card, Form, Col, Row } from 'react-bootstrap';
 import authService from './auth/auth';
 
-// Reformatted for readability only — no behavioral changes.
 const BoardView = () => {
   const { boardId } = useParams();
   const navigate = useNavigate();
@@ -12,6 +11,9 @@ const BoardView = () => {
   const [newListName, setNewListName] = useState('');
   const [members, setMembers] = useState([]);
   const [showMembers, setShowMembers] = useState(false);
+  const [boardName, setBoardName] = useState('');
+  const [inviting, setInviting] = useState(false);
+  const [inviteUserId, setInviteUserId] = useState('');
 
   const [hoveredList, setHoveredList] = useState(null);
   const [hoveredCard, setHoveredCard] = useState(null);
@@ -20,9 +22,15 @@ const BoardView = () => {
   const fetch = async () => {
     const res = await authService.getListsByBoard(Number(boardId));
     setLists(res || []);
-
     const m = await authService.getBoardMembers(Number(boardId));
     setMembers(m || []);
+    try {
+      const boards = await authService.getBoards();
+      const b = (boards || []).find(x => Number(x.boardId) === Number(boardId));
+      if (b && b.name) setBoardName(b.name);
+    } catch (err) {
+      console.debug('Could not fetch boards to resolve name', err);
+    }
   };
 
   useEffect(() => {
@@ -79,9 +87,8 @@ const BoardView = () => {
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2>Board {boardId}</h2>
-
-        <div>
+        <h2>{boardName ? boardName : `Board ${boardId}`}</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'nowrap' }}>
           <Button
             variant="info"
             className="me-2"
@@ -97,11 +104,39 @@ const BoardView = () => {
           >
             Members
           </Button>
-
+          {inviting ? (
+            <div className="d-flex align-items-center" style={{ gap: 8, marginRight: 8 }} onClick={(e) => e.stopPropagation()}>
+              <input
+                type="number"
+                className="form-control me-2"
+                placeholder="userId"
+                value={inviteUserId}
+                onChange={(e) => setInviteUserId(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                style={{ width: 140 }}
+              />
+              <Button variant="success" onClick={async (e) => {
+                e.stopPropagation();
+                if (!inviteUserId) return;
+                try {
+                  await authService.addUserToBoard(Number(boardId), Number(inviteUserId));
+                  const m2 = await authService.getBoardMembers(Number(boardId));
+                  setMembers(m2 || []);
+                  setShowMembers(true);
+                } catch (err) {
+                  console.error('Invite failed', err);
+                }
+                setInviting(false);
+                setInviteUserId('');
+              }}>OK</Button>
+              <Button variant="secondary" className="ms-2" onClick={(e) => { e.stopPropagation(); setInviting(false); setInviteUserId(''); }}>X</Button>
+            </div>
+          ) : (
+            <Button variant="outline-primary" className="me-2" onClick={() => setInviting(true)}>Invite</Button>
+          )}
           <Button variant="secondary" onClick={() => navigate(-1)}>Back</Button>
         </div>
       </div>
-
       {showMembers && (
         <div className="mb-3">
           {members.map((m) => {
@@ -126,7 +161,6 @@ const BoardView = () => {
           })}
         </div>
       )}
-
       <Form onSubmit={handleAddList} className="mb-3 d-flex">
         <Form.Control
           placeholder="New list name"
@@ -135,7 +169,6 @@ const BoardView = () => {
         />
         <Button type="submit" className="ms-2">Add</Button>
       </Form>
-
       <Row className="g-3" style={{ overflowX: 'auto', whiteSpace: 'nowrap' }}>
         {lists.map((list) => (
           <Col key={list.listId} style={{ display: 'inline-block', verticalAlign: 'top', width: 300 }}>
@@ -155,10 +188,8 @@ const BoardView = () => {
                   >
                     {list.name}
                   </Card.Title>
-
                   <div style={{ color: hoveredList === list.listId ? '#721c24' : 'transparent', fontWeight: 700 }} />
                 </div>
-
                 {list.cards.map((card) => (
                   <div key={card.cardId}
                     draggable
@@ -174,13 +205,11 @@ const BoardView = () => {
                       >
                         {card.title}
                       </div>
-
                       <div className="d-flex align-items-center" style={{ height: '100%' }}>
                         <div style={{ position: 'relative', height: '100%', display: 'flex', alignItems: 'center', overflow: 'visible' }} onClick={(e) => e.stopPropagation()}>
                           <div className="btn btn-light d-flex align-items-center" style={{ height: '100%', padding: '0 12px', borderRadius: '0 6px 6px 0', background: '#f1f3f5', border: '1px solid #e9ecef', color: '#212529', display: 'flex', justifyContent: 'center', minWidth: 200, marginRight: -41, lineHeight: 3 }}>
                             {members.find((m) => m.id === card.userId)?.username || 'Unassigned'}
                           </div>
-
                           <select
                             value={card.userId || ''}
                             onClick={(e) => e.stopPropagation()}
@@ -193,13 +222,11 @@ const BoardView = () => {
                             ))}
                           </select>
                         </div>
-
                         <div style={{ color: hoveredCard === card.cardId ? '#721c24' : 'transparent', fontWeight: 700, display: 'flex', alignItems: 'center', marginLeft: 8 }}>Del</div>
                       </div>
                     </div>
                   </div>
                 ))}
-
                 <div style={{ background: 'transparent', paddingTop: 0, paddingBottom: 0 }}>
                   <AddCardInline onAdd={(title) => handleAddCard(list.listId, title)} />
                 </div>
@@ -214,7 +241,6 @@ const BoardView = () => {
 
 const AddCardInline = ({ onAdd }) => {
   const [val, setVal] = useState('');
-
   return (
     <div className="d-flex mt-0 align-items-center" onClick={(e) => e.stopPropagation()} style={{ width: '100%', gap: 8 }}>
       <input
@@ -225,7 +251,6 @@ const AddCardInline = ({ onAdd }) => {
         placeholder="Card title"
         style={{ width: '100%', background: '#ffffff', borderRadius: 6, padding: '4px 8px', boxSizing: 'border-box', height: 32 }}
       />
-
       <Button size="sm" className="ms-2" onClick={(e) => { e.stopPropagation(); onAdd(val); setVal(''); }}>Add</Button>
     </div>
   );
