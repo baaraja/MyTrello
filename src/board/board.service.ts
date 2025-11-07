@@ -15,6 +15,7 @@ export class BoardService {
                         boardId: true,
                         name: true,
                         description: true,
+                        workspaceId: true,
                     },
                 },
             },
@@ -23,6 +24,7 @@ export class BoardService {
             boardId: b.board.boardId,
             name: b.board.name,
             description: b.board.description,
+            workspaceId: b.board.workspaceId,
         }));
     }
     constructor(private readonly prismaService: PrismaService) {}

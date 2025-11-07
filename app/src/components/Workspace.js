@@ -10,7 +10,8 @@ const Workspace = () => {
     const handleSubmit = async e => {
         e.preventDefault();
         await authService.createWorkspace(name, description);
-        navigate('/');
+        const user = localStorage.getItem('username');
+        navigate(user ? `/u/${user}/boards` : '/');
     };
     return (
         <div className="d-flex justify-content-center">

@@ -19,7 +19,8 @@ const Board = () => {
     const handleSubmit = async e => {
         e.preventDefault();
         await authService.createBoard(name, description, Number(workspaceId));
-        navigate('/');
+        const user = localStorage.getItem('username');
+        navigate(user ? `/u/${user}/boards` : '/');
     };
     return (
         <div className="d-flex justify-content-center">

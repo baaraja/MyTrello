@@ -57,15 +57,6 @@ const Dash = ({ user }) => {
         <div>
             <h2 className="d-flex align-items-center">
                 Workspaces
-                <Button variant="primary" className="ms-2" onClick={() => navigate('/w/add')} style={{
-                    fontSize: '1.5rem',
-                    width: '25px',
-                    height: '25px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center' }}>
-                    +
-                </Button>
             </h2>
             {workspaces.length > 0 ? (
                 <ListGroup>
@@ -156,15 +147,6 @@ const Dash = ({ user }) => {
             )}
             <h2 className="d-flex align-items-center" style={{ marginTop: '20px' }}>
                 Boards
-                <Button variant="primary" className="ms-2" onClick={() => navigate('/b/add')} style={{
-                    fontSize: '1.5rem',
-                    width: '25px',
-                    height: '25px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center' }}>
-                    +
-                </Button>
             </h2>
             {boards.length > 0 ? (
                 <ListGroup>

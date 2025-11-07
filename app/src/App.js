@@ -8,6 +8,8 @@ import Dash from './components/Dash';
 import Workspace from './components/Workspace';
 import Board from './components/Board';
 import BoardView from './components/BoardView';
+import SidebarLayout from './components/SidebarLayout';
+import WorkspaceView from './components/WorkspaceView';
 
 function App() {
     const [user, setUser] = useState(localStorage.getItem('username'));
@@ -48,12 +50,19 @@ function App() {
                             )}
                         </div>
                     } />
+
                     <Route path="/login" element={<Login setUser={setUser} />} />
                     <Route path="/register" element={<Register />} />
-                    <Route path="/u/:user/boards" element={<Dash user={user} />} />
-                    <Route path="/w/add" element={<Workspace user={user} />} />
-                    <Route path="/b/add" element={<Board user={user} />} />
-                    <Route path="/b/:boardId" element={<BoardView user={user} />} />
+
+                    {/* Routes rendered inside the sidebar layout */}
+                    <Route element={<SidebarLayout user={user} />}>
+                        <Route path="/u/:user/boards" element={<Dash user={user} />} />
+                        <Route path="/b/:boardId" element={<BoardView user={user} />} />
+                        <Route path="/w/:workspaceId" element={<WorkspaceView user={user} />} />
+                        <Route path="/w/add" element={<Workspace user={user} />} />
+                        <Route path="/b/add" element={<Board user={user} />} />
+                    </Route>
+
                     <Route path="*" element={
                         <div className="d-flex justify-content-center align-items-center" style={{ height: '75vh' }}>
                             <strong style={{ fontSize: '8rem' }}>

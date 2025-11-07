@@ -14,6 +14,8 @@ const BoardView = () => {
   const [boardName, setBoardName] = useState('');
   const [inviting, setInviting] = useState(false);
   const [inviteUserId, setInviteUserId] = useState('');
+  const [editingName, setEditingName] = useState(false);
+  const [editingBoardName, setEditingBoardName] = useState('');
 
   const [hoveredList, setHoveredList] = useState(null);
   const [hoveredCard, setHoveredCard] = useState(null);
@@ -87,7 +89,33 @@ const BoardView = () => {
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2>{boardName ? boardName : `Board ${boardId}`}</h2>
+        {editingName ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input
+              className="form-control"
+              value={editingBoardName}
+              onChange={(e) => setEditingBoardName(e.target.value)}
+              style={{ width: 360 }}
+              onClick={(e) => e.stopPropagation()}
+            />
+            <Button size="sm" variant="success" onClick={async () => {
+              if (!editingBoardName) return;
+              try {
+                await authService.updateBoard(Number(boardId), { name: editingBoardName });
+                setBoardName(editingBoardName);
+              } catch (err) {
+                console.error('Failed to update board name', err);
+              }
+              setEditingName(false);
+            }}>Save</Button>
+            <Button size="sm" variant="secondary" onClick={() => setEditingName(false)}>Cancel</Button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <h2 className="mb-0" style={{ margin: 0, lineHeight: 1 }}>{boardName ? boardName : `Board ${boardId}`}</h2>
+            <Button size="sm" variant="outline-secondary" onClick={() => { setEditingBoardName(boardName); setEditingName(true); }} style={{ alignSelf: 'center' }}>Edit</Button>
+          </div>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'nowrap' }}>
           <Button
             variant="info"
