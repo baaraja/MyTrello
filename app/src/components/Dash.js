@@ -93,7 +93,7 @@ const Dash = ({ user }) => {
                                                 <Button size="sm" variant="secondary" className="ms-2" onClick={(e) => { e.stopPropagation(); setEditingWorkspace(null); }}>{'Cancel'}</Button>
                                             </div>
                                         ) : (
-                                            <div style={{ display: 'flex', alignItems: 'center' }} onClick={(e) => { e.stopPropagation(); navigate(`/w/${workspace.name}`); }}>
+                                            <div style={{ display: 'flex', alignItems: 'center' }} onClick={(e) => { e.stopPropagation(); navigate(`/w/${workspace.workspaceId}`); }}>
                                                 <strong style={{ padding: '6px', borderRadius: 4 }}>{capitalize(workspace.name)}</strong>
                                             </div>
                                         )}
@@ -107,7 +107,7 @@ const Dash = ({ user }) => {
                                             </span>
                                         ):(
                                             <>
-                                            <Button size="sm" variant="outline-primary" onClick={()=>{setInviting(workspace.workspaceId);}}>Invite</Button>
+                                            <Button size="sm" variant="outline-primary" onClick={()=>{setInviting(workspace.workspaceId);}} style={{ background: '#ffffff', color: '#0d6efd', border: '1px solid #0d6efd' }}>Invite</Button>
                                             <Button size="sm" variant="light" className="ms-2" onClick={(e)=>{ e.stopPropagation(); setEditingWorkspace(workspace.workspaceId); setEditingWorkspaceName(workspace.name); }}>Edit</Button>
                                             <Button size="sm" variant="info" className="ms-2" onClick={async()=>{if(workspaceMembers[workspace.workspaceId]){setWorkspaceMembers(prev=>{const copy={...prev};delete copy[workspace.workspaceId];return copy;});}else{const res=await authService.getWorkspaceMembers(workspace.workspaceId);setWorkspaceMembers(prev=>({...prev,[workspace.workspaceId]:res}));}}}>Members</Button>
                                             </>
@@ -197,7 +197,7 @@ const Dash = ({ user }) => {
                                             </span>
                                         ):(
                                             <>
-                                            <Button size="sm" variant="outline-primary" onClick={()=>{setInvitingBoard(board.boardId);}}>Invite</Button>
+                                            <Button size="sm" variant="outline-primary" onClick={()=>{setInvitingBoard(board.boardId);}} style={{ background: '#ffffff', color: '#0d6efd', border: '1px solid #0d6efd' }}>Invite</Button>
                                             <Button size="sm" variant="light" className="ms-2" onClick={(e)=>{ e.stopPropagation(); setEditingBoard(board.boardId); setEditingBoardName(board.name); }}>Edit</Button>
                                             <Button size="sm" variant="info" className="ms-2" onClick={async()=>{if(boardMembers[board.boardId]){setBoardMembers(prev=>{const copy={...prev};delete copy[board.boardId];return copy;});}else{const res=await authService.getBoardMembers(board.boardId);setBoardMembers(prev=>({...prev,[board.boardId]:res}));}}}>Members</Button>
                                             </>
